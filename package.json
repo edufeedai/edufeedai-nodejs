@@ -2,6 +2,7 @@
   "name": "edu-feed-ai",
   "version": "1.0.0",
   "main": "index.js",
+  "type":"module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/app.js",
@@ -14,12 +15,14 @@
   "description": "",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.10",
+    "@types/node-fetch": "^2.6.11",
     "nodemon": "^3.1.0",
     "typescript": "^5.4.5"
   }
