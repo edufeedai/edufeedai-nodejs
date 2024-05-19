@@ -1,6 +1,10 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import bodyParser from 'body-parser';
+import mongoose from 'mongoose';
+
+const mongoURI:string = process.env.MONGO_URI || 'mongodb://localhost:27017/chat';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -8,6 +12,17 @@ dotenv.config();
 // Inicializar Express
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const connectToMongo = async () => {
+    try {
+        await mongoose.connect(mongoURI);
+        console.log('MongoDB connected');
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+    }
+};
+
+connectToMongo();
 
 // Middleware para parsear el cuerpo de las solicitudes JSON
 app.use(express.json());

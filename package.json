@@ -2,7 +2,7 @@
   "name": "edu-feed-ai",
   "version": "1.0.0",
   "main": "index.js",
-  "type":"module",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/app.js",
@@ -16,6 +16,7 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "mongoose": "^8.4.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

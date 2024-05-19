@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build: .
@@ -8,6 +7,21 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    depends_on:
+      - mongo
     environment:
       - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/chat
     command: npm run dev
+
+  mongo:
+    image: mongo:latest
+    
+    ports:
+      - "27017:27017"
+    
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
