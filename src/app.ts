@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 
+// MongoDB
 const mongoURI:string = process.env.MONGO_URI || 'mongodb://localhost:27017/chat';
 
 // Cargar variables de entorno
