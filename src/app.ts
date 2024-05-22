@@ -3,16 +3,17 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import mongoose from 'mongoose';
 
-// MongoDB
-const mongoURI:string = process.env.MONGO_URI || 'mongodb://localhost:27017/chat';
-
 // Cargar variables de entorno
 dotenv.config();
+
+// MongoDB URI
+const mongoURI: string = process.env.MONGO_URI || 'mongodb://localhost:27017/chat';
 
 // Inicializar Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Conectar a MongoDB
 const connectToMongo = async () => {
     try {
         await mongoose.connect(mongoURI);
@@ -27,23 +28,80 @@ connectToMongo();
 // Middleware para parsear el cuerpo de las solicitudes JSON
 app.use(express.json());
 
-// Definir el endpoint POST
-app.post('/chat', async (req: Request, res: Response) => {
-    const promptText = req.body.prompt;
-    if (!promptText) {
-        return res.status(400).send({ message: 'El campo "prompt" es necesario en el cuerpo de la solicitud.' });
-    }
+// Definición del esquema y modelo de Mongoose
+interface IMessage extends mongoose.Document {
+    chatId: string;
+    role: string;
+    content: string;
+}
 
-    try {
-        const response = await queryChatGPT(promptText);
-        res.status(200).json(response);
-    } catch (error) {
-        console.error('Error al llamar a la API de OpenAI:', error);
-        res.status(500).send({ message: 'Error al procesar la solicitud.' });
-    }
+const messageSchema = new mongoose.Schema({
+    chatId: { type: String, required: true },
+    role: { type: String, required: true },
+    content: { type: String, required: true },
 });
 
-async function queryChatGPT(promptText: string) {
+const Message = mongoose.model<IMessage>('Message', messageSchema);
+
+// Definición de los tipos de la respuesta de OpenAI
+interface OpenAIChoice {
+    message: {
+        role: string;
+        content: string;
+    };
+}
+
+interface OpenAIResponse {
+    choices: OpenAIChoice[];
+}
+
+// Ruta para iniciar un nuevo chat
+app.post('/start-chat', async (req: Request, res: Response) => {
+    const chatId = new mongoose.Types.ObjectId().toString();
+    const systemMessage = new Message({ chatId, role: 'system', content: 'You are a helpful assistant.' });
+    await systemMessage.save();
+    res.json({ chatId });
+});
+
+// Ruta para enviar un mensaje y obtener respuesta
+app.post('/send-message', async (req: Request, res: Response) => {
+    const { chatId, message } = req.body;
+
+    // Almacenar el mensaje del usuario
+    const userMessage = new Message({ chatId, role: 'user', content: message });
+    await userMessage.save();
+
+    // Obtener el historial del chat
+    const messages = await Message.find({ chatId });
+
+    // Formatear los mensajes para la API de OpenAI
+    const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+    // Llamar a la API de OpenAI
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+            model: 'gpt-4',
+            messages: formattedMessages
+        })
+    });
+
+    const data: OpenAIResponse = await response.json() as OpenAIResponse;
+    const assistantMessage = data.choices[0].message;
+
+    // Almacenar la respuesta del asistente
+    const botMessage = new Message({ chatId, role: 'assistant', content: assistantMessage.content });
+    await botMessage.save();
+
+    res.json(assistantMessage);
+});
+
+// Función para consultar a ChatGPT
+async function queryChatGPT(messages: any) {
     const apiKey = process.env.OPENAI_API_KEY;
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -52,8 +110,8 @@ async function queryChatGPT(promptText: string) {
             'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: promptText }]
+            model: "gpt-4",
+            messages: messages
         })
     });
 
@@ -61,15 +119,16 @@ async function queryChatGPT(promptText: string) {
         throw new Error('Failed to fetch response from OpenAI');
     }
 
-    const data = await response.json();
+    const data:OpenAIResponse = await response.json() as OpenAIResponse;
     return data;
 }
 
-
-app.get('/', (req, res) => {
+// Ruta raíz
+app.get('/', (req: Request, res: Response) => {
     res.send('Hola mundo Express y TypeScript desde node!');
 });
 
+// Iniciar el servidor
 app.listen(PORT, () => {
     console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });
