@@ -2,7 +2,7 @@
     "compilerOptions": {
       "module": "ES6",
       "target": "ES6",
-      "moduleResolution": "Node",
+      "moduleResolution": "Bundler",
       "outDir": "./dist",
       "rootDir": "./src",
       "strict": true,
@@ -10,8 +10,8 @@
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true,
       "sourceMap": true
-
     },
-    "include": ["src/**/*"]
+    "include": ["src"],
+    "exclude": ["node_modules"]
   }
   
