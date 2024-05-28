@@ -3,12 +3,13 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import mongoose from 'mongoose';
 
-import {Message} from './model/message';
+import {Message} from './model/Message';
 
 // Cargar variables de entorno
 dotenv.config();
 
 // MongoDB URI
+
 const mongoURI: string = process.env.MONGO_URI || 'mongodb://localhost:27017/chat';
 
 // Inicializar Express

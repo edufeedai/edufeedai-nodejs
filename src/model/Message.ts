@@ -16,3 +16,4 @@ const messageSchema: Schema = new Schema({
 
 // Creación y exportación del modelo de Mongoose para el mensaje
 export const Message = mongoose.model<IMessage>('Message', messageSchema);
+export default Message
