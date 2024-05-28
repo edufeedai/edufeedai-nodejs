@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import mongoose from 'mongoose';
 
+import {Message} from './model/message';
+
 // Cargar variables de entorno
 dotenv.config();
 
@@ -28,21 +30,6 @@ connectToMongo();
 // Middleware para parsear el cuerpo de las solicitudes JSON
 app.use(express.json());
 
-// Definición del esquema y modelo de Mongoose
-interface IMessage extends mongoose.Document {
-    chatId: string;
-    role: string;
-    content: string;
-}
-
-const messageSchema = new mongoose.Schema({
-    chatId: { type: String, required: true },
-    role: { type: String, required: true },
-    content: { type: String, required: true },
-});
-
-const Message = mongoose.model<IMessage>('Message', messageSchema);
-
 // Definición de los tipos de la respuesta de OpenAI
 interface OpenAIChoice {
     message: {
@@ -60,6 +47,16 @@ app.post('/start-chat', async (req: Request, res: Response) => {
     const chatId = new mongoose.Types.ObjectId().toString();
     const systemMessage = new Message({ chatId, role: 'system', content: 'You are a helpful assistant.' });
     await systemMessage.save();
+    res.json({ chatId });
+});
+
+app.post('/start-grading',async (req: Request, res: Response) => {
+    const chatId = new mongoose.Types.ObjectId().toString();
+    const {gradingCriteria,taskSubmitted} = req.body;
+    const systemMessage = new Message({ chatId, role: 'system', content: gradingCriteria });
+    await systemMessage.save();
+    const userMessage = new Message({chatId, role: 'user', content: taskSubmitted})
+    await userMessage.save();
     res.json({ chatId });
 });
 
