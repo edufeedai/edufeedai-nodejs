@@ -43,30 +43,12 @@ interface OpenAIResponse {
     choices: OpenAIChoice[];
 }
 
-// Ruta para iniciar un nuevo chat
-app.post('/start-chat', async (req: Request, res: Response) => {
-    const chatId = new mongoose.Types.ObjectId().toString();
-    const systemMessage = new Message({ chatId, role: 'system', content: 'You are a helpful assistant.' });
-    await systemMessage.save();
-    res.json({ chatId });
-});
-
-app.post('/start-grading',async (req: Request, res: Response) => {
+app.post('/grade',async (req: Request, res: Response) => {
     const chatId = new mongoose.Types.ObjectId().toString();
     const {gradingCriteria,taskSubmitted} = req.body;
     const systemMessage = new Message({ chatId, role: 'system', content: gradingCriteria });
     await systemMessage.save();
     const userMessage = new Message({chatId, role: 'user', content: taskSubmitted})
-    await userMessage.save();
-    res.json({ chatId });
-});
-
-// Ruta para enviar un mensaje y obtener respuesta
-app.post('/send-message', async (req: Request, res: Response) => {
-    const { chatId, message } = req.body;
-
-    // Almacenar el mensaje del usuario
-    const userMessage = new Message({ chatId, role: 'user', content: message });
     await userMessage.save();
 
     // Obtener el historial del chat
@@ -95,31 +77,14 @@ app.post('/send-message', async (req: Request, res: Response) => {
     const botMessage = new Message({ chatId, role: 'assistant', content: assistantMessage.content });
     await botMessage.save();
 
-    res.json(assistantMessage);
-});
-
-// Función para consultar a ChatGPT
-async function queryChatGPT(messages: any) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "gpt-4",
-            messages: messages
-        })
+    res.json({
+        id: chatId,
+        gradingCriteria,
+        taskSubmitted,
+        assessmentFeedback: assistantMessage.content
     });
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch response from OpenAI');
-    }
-
-    const data:OpenAIResponse = await response.json() as OpenAIResponse;
-    return data;
-}
+});
 
 // Ruta raíz
 app.get('/', (req: Request, res: Response) => {
